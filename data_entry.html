@@ -93,7 +93,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwq17RYvsA_IYRIOYf-mv_HxI5py_Oqspzu7iVNUvOenav9CogvmKBXjNoE-936VRFVRg/exec';
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwWVmG3OvJNTU6Voy3opP1mdY7RuGVn4VrO9F6j9tgXBy8DjOgGyjoDk1s3vq01NPNjbQ/exec';
 
     function populateDropdown() {
       fetch(scriptUrl + '?action=getDatabaseNames')
@@ -153,11 +153,10 @@
           }
 
           let html = `<h3>Campaigns for ${db}</h3><table><tr><th>Type</th><th>Date</th><th>Records</th><th>Leads</th></tr>`;
-          const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
           data.forEach(row => {
             html += `<tr>
               <td>${row.campaignType}</td>
-              <td>${formattedDate}</td>
+              <td>${row.date}</td>
               <td>${row.noOfRecords}</td>
               <td>${row.noOfLeads}</td>
             </tr>`;
@@ -238,3 +237,4 @@
   </script>
 </body>
 </html>
+
