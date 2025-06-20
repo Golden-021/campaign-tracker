@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Campaign Data Entry</title>
+  <title>Campaign Reporting Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
@@ -10,79 +12,47 @@
       padding: 0;
     }
     .container {
-      max-width: 600px;
+      max-width: 1100px;
       margin: 40px auto;
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       padding: 40px 30px 30px 30px;
     }
-    h1 {
-      text-align: center;
+    h1, h2 {
       color: #1a237e;
-      margin-bottom: 30px;
-      font-size: 2em;
-      letter-spacing: 1px;
+      text-align: center;
     }
-    .option-buttons {
+    .filters {
       display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
       justify-content: center;
-      gap: 30px;
       margin-bottom: 30px;
     }
-    .option-btn {
-      background: #3949ab;
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 14px 36px;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: background 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    }
-    .option-btn:hover {
-      background: #283593;
-    }
-    .entry-form {
-      display: none;
-      margin-top: 20px;
-    }
-    label {
+    .filters label {
       font-weight: 500;
-      color: #333;
-      margin-bottom: 6px;
-      display: block;
+      margin-bottom: 4px;
     }
-    input, select, textarea, button {
-      width: 100%;
-      margin-top: 8px;
-      margin-bottom: 18px;
-      padding: 10px;
-      font-size: 1em;
+    .filters select, .filters input[type="date"] {
+      padding: 7px 12px;
       border-radius: 5px;
       border: 1px solid #bdbdbd;
       background: #fafbfc;
-      box-sizing: border-box;
     }
-    textarea { resize: vertical; }
-    button[type="button"], button[type="submit"] {
+    .filters button {
       background: #3949ab;
       color: #fff;
       border: none;
       border-radius: 5px;
-      padding: 12px 0;
-      font-size: 1.1em;
+      padding: 8px 22px;
+      font-size: 1em;
       cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 10px;
-    }
-    button[type="button"]:hover, button[type="submit"]:hover {
-      background: #283593;
+      height: 38px;
     }
     #spinner {
       display: none;
-      margin: 20px auto;
+      margin: 30px auto;
       border: 7px solid #f3f3f3;
       border-top: 7px solid #3949ab;
       border-radius: 50%;
@@ -91,156 +61,184 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
-    #msg {
-      text-align: center;
-      font-size: 1.1em;
-      margin-top: 10px;
-      color: #388e3c;
-      font-weight: 500;
+    #report, #calendar, #dbDetails, #charts {
+      margin-top: 30px;
     }
-    @media (max-width: 700px) {
-      .container { padding: 10px; }
-      .option-buttons { flex-direction: column; gap: 16px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fafbfc;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e3e3e3;
+    }
+    th {
+      background: #e8eaf6;
+    }
+    .no-data {
+      text-align: center;
+      color: #b71c1c;
+      font-size: 1.1em;
+    }
+    #charts canvas {
+      max-width: 500px;
+      margin: 20px auto;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Campaign Data Entry</h1>
-    <div class="option-buttons">
-      <button class="option-btn" onclick="showForm('db')">Add Database</button>
-      <button class="option-btn" onclick="showForm('campaign')">Add Campaign</button>
-    </div>
-
-    <!-- Database Entry Form -->
-    <form id="dbForm" class="entry-form">
-      <label>Database Name</label>
-      <input type="text" name="name" required>
-      <label>Source</label>
-      <input type="text" name="source" required>
-      <label>Industry</label>
-      <input type="text" name="industry" required>
-      <label>Total No. of Records</label>
-      <input type="number" name="totalRecords" required>
-      <label>No. of Emails</label>
-      <input type="number" name="noOfEmails" required>
-      <label>No. of Valid Emails</label>
-      <input type="number" name="noOfValidEmails" required>
-      <label>No. of Mobile No.</label>
-      <input type="number" name="noOfMobile" required>
-      <label>No. of WhatsApp Valid Mobile No.</label>
-      <input type="number" name="noOfValidWhatsApp" required>
-      <label>Description</label>
-      <textarea name="description"></textarea>
-      <button type="button" onclick="addDatabase()">Add Database</button>
-    </form>
-
-    <!-- Campaign Entry Form -->
-    <form id="campaignForm" class="entry-form">
-      <label>Select Database</label>
-      <select name="databaseName" id="databaseDropdown" required>
+<div class="container">
+  <h1>Campaign Reporting Dashboard</h1>
+  <div class="filters">
+    <div>
+      <label for="dbDropdown">Select Database:</label>
+      <select id="dbDropdown">
         <option value="">-- Select Database --</option>
       </select>
-      <label>Campaign Type</label>
-      <select name="campaignType" required>
-        <option value="">Select Campaign Type</option>
-        <option value="whatsapp1">WhatsApp 1</option>
-        <option value="whatsapp2">WhatsApp 2</option>
-        <option value="email1">Email 1</option>
-        <option value="email2">Email 2</option>
-        <option value="telecalling">Telecalling</option>
-      </select>
-      <label>Date</label>
-      <input type="date" name="date" required>
-      <label>No. of Records</label>
-      <input type="number" name="noOfRecords" required>
-      <label>No. of Leads Came</label>
-      <input type="number" name="noOfLeads" required>
-      <button type="button" onclick="addCampaign()">Add Campaign</button>
-    </form>
-    <div id="spinner"></div>
-    <div id="msg"></div>
+      <button onclick="fetchFullReport()">Show Full Report</button>
+    </div>
   </div>
-  <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxJOmHCVp6mnUQYYCWcaeApEoV6VaObWV2IKyfnScd0aMw7V_fgMCDhXPXw7gPnHEGH0A/exec';
-    function showForm(type) {
-      document.getElementById('msg').textContent = '';
-      document.getElementById('dbForm').style.display = (type === 'db') ? 'block' : 'none';
-      document.getElementById('campaignForm').style.display = (type === 'campaign') ? 'block' : 'none';
-      if (type === 'campaign') populateDatabaseDropdown();
-    }
 
-    function showSpinner() {
-      document.getElementById('spinner').style.display = 'block';
-    }
-    function hideSpinner() {
-      document.getElementById('spinner').style.display = 'none';
-    }
+  <div id="spinner"></div>
 
-    function addDatabase() {
-      const form = document.getElementById('dbForm');
-      const data = Object.fromEntries(new FormData(form).entries());
-      showSpinner();
-      fetch(scriptUrl + '?action=addDatabase', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      })
+  <div id="dbDetails"></div>
+  <div id="report"></div>
+  <div id="charts">
+    <canvas id="leadPieChart"></canvas>
+    <canvas id="leadBarChart"></canvas>
+  </div>
+  <h2>Campaign Calendar</h2>
+  <div id="calendar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+  const scriptUrl = 'https://script.google.com/macros/s/AKfycbz3uFFNT7fjMQ0g81-Wd6rEfjSVYCEplVzK6Mn7QUZx/dev'; // Replace with your deployed script URL
+  let pieChart, barChart;
+
+  function showSpinner() {
+    document.getElementById('spinner').style.display = 'block';
+  }
+  function hideSpinner() {
+    document.getElementById('spinner').style.display = 'none';
+  }
+
+  function populateDropdown() {
+    fetch(`${scriptUrl}?action=getDatabaseNames`)
       .then(res => res.json())
-      .then(res => {
-        document.getElementById('msg').style.color = res.success ? "#388e3c" : "#b71c1c";
-        document.getElementById('msg').textContent = res.success ? "Database added successfully!" : "Error adding database.";
-        if (res.success) form.reset();
-        hideSpinner();
-      })
-      .catch(() => { hideSpinner(); });
-    }
+      .then(names => {
+        const select = document.getElementById('dbDropdown');
+        names.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+      });
+  }
 
- function addDatabase() {
-  const form = document.getElementById('dbForm');
-  const data = Object.fromEntries(new FormData(form).entries());
-  showSpinner();
-  fetch(scriptUrl + '?action=addDatabase', {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(res => res.json())
-  .then(res => {
-    document.getElementById('msg').style.color = res.success ? "#388e3c" : "#b71c1c";
-    document.getElementById('msg').textContent = res.success ? "Database added successfully!" : "Error adding database.";
-    if (res.success) form.reset();
-    hideSpinner();
-  })
-  .catch(err => {
-    document.getElementById('msg').style.color = "#b71c1c";
-    document.getElementById('msg').textContent = "Error: " + err;
-    hideSpinner();
-  });
-}
+  function fetchFullReport() {
+    const dbName = document.getElementById('dbDropdown').value;
+    if (!dbName) return;
+    showSpinner();
+    Promise.all([
+      fetch(`${scriptUrl}?action=getDatabaseDetails&databaseName=${encodeURIComponent(dbName)}`).then(r => r.json()),
+      fetch(`${scriptUrl}?action=getCampaignsByDatabase&databaseName=${encodeURIComponent(dbName)}`).then(r => r.json())
+    ])
+    .then(([details, campaigns]) => {
+      showDatabaseDetails(details);
+      showReport(campaigns);
+      drawCharts(campaigns);
+    })
+    .finally(hideSpinner);
+  }
 
-    function populateDatabaseDropdown() {
-      showSpinner();
-      fetch(scriptUrl + '?action=getDatabaseNames')
-        .then(res => res.json())
-        .then(names => {
-          const select = document.getElementById('databaseDropdown');
-          while (select.options.length > 1) select.remove(1);
-          if (Array.isArray(names) && Array.isArray(names[0])) {
-            names = names.map(row => row[0]);
-          }
-          names.forEach(name => {
-            if (name && name.toString().trim()) {
-              const opt = document.createElement('option');
-              opt.value = name;
-              opt.textContent = name;
-              select.appendChild(opt);
-            }
-          });
-          hideSpinner();
-        })
-        .catch(() => hideSpinner());
+  function showDatabaseDetails(data) {
+    const div = document.getElementById('dbDetails');
+    let html = '<h2>Database Details</h2><table>';
+    Object.entries(data).forEach(([key, val]) => {
+      html += `<tr><td><b>${key}</b></td><td>${val}</td></tr>`;
+    });
+    html += '</table>';
+    div.innerHTML = html;
+  }
+
+  function showReport(data) {
+    const div = document.getElementById('report');
+    if (!data.length) {
+      div.innerHTML = '<div class="no-data">No campaigns found.</div>';
+      return;
     }
-  </script>
+    let html = '<h2>Campaigns</h2><table><tr><th>Type</th><th>Date</th><th>Records</th><th>Leads</th></tr>';
+    data.forEach(d => {
+      html += `<tr><td>${d.campaignType}</td><td>${d.date}</td><td>${d.noOfRecords}</td><td>${d.noOfLeads}</td></tr>`;
+    });
+    html += '</table>';
+    div.innerHTML = html;
+  }
+
+  function drawCharts(data) {
+    const labels = [];
+    const values = [];
+    const dateMap = {};
+
+    data.forEach(d => {
+      labels.push(d.campaignType);
+      values.push(Number(d.noOfLeads || 0));
+      const date = new Date(d.date).toLocaleDateString();
+      dateMap[date] = (dateMap[date] || 0) + Number(d.noOfLeads || 0);
+    });
+
+    if (pieChart) pieChart.destroy();
+    if (barChart) barChart.destroy();
+
+    pieChart = new Chart(document.getElementById('leadPieChart').getContext('2d'), {
+      type: 'pie',
+      data: { labels, datasets: [{ data: values, backgroundColor: ['#42a5f5','#66bb6a','#ffa726','#ab47bc','#ef5350'] }] },
+      options: { responsive: true, plugins: { title: { display: true, text: 'Lead Share by Campaign Type' } } }
+    });
+
+    barChart = new Chart(document.getElementById('leadBarChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(dateMap),
+        datasets: [{ label: 'Leads Over Time', data: Object.values(dateMap), backgroundColor: '#3949ab' }]
+      },
+      options: {
+        responsive: true,
+        plugins: { title: { display: true, text: 'Lead Trend by Date' } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  function loadCalendar() {
+    fetch(`${scriptUrl}?action=getAllCampaigns`)
+      .then(res => res.json())
+      .then(data => {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          events: data.map(row => ({
+            title: `${row.databaseName} - ${row.campaignType} (${row.noOfLeads} leads)`,
+            start: row.date,
+            allDay: true
+          }))
+        });
+        calendar.render();
+      });
+  }
+
+  window.onload = function() {
+    populateDropdown();
+    loadCalendar();
+  };
+</script>
 </body>
 </html>
