@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Campaign Tracker - Reports</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
+    label, input, select { margin: 0.5rem 0; display: block; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Campaign Report</h2>
+  <label>Database</label>
+  <select id="dbFilter">
+    <option value="">-- All --</option>
+  </select>
+  <label>Date From</label><input type="date" id="fromDate" />
+  <label>Date To</label><input type="date" id="toDate" />
+  <button onclick="loadReport()">Load Report</button>
+
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Campaign</th><th>Database</th><th>Date</th><th>Records</th><th>Leads</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const scriptURL = 'YOUR_SCRIPT_WEB_APP_URL_HERE';
+
+    async function fetchCampaigns() {
+      const res = await fetch(`${scriptURL}?type=campaign`);
+      return await res.json();
+    }
+
+    async function fetchDatabases() {
+      const res = await fetch(`${scriptURL}?type=database`);
+      return await res.json();
+    }
+
+    async function loadReport() {
+      const all = await fetchCampaigns();
+      const db = document.getElementById("dbFilter").value;
+      const from = document.getElementById("fromDate").value;
+      const to = document.getElementById("toDate").value;
+
+      const filtered = all.filter(row => {
+        const date = new Date(row.date);
+        const fromDate = from ? new Date(from) : null;
+        const toDate = to ? new Date(to) : null;
+        return (!db || row.database_name === db) &&
+               (!from || date >= fromDate) &&
+               (!to || date <= toDate);
+      });
+
+      const tbody = document.querySelector("#reportTable tbody");
+      tbody.innerHTML = '';
+      filtered.forEach(row => {
+        tbody.innerHTML += `<tr>
+          <td>${row.campaign_type}</td>
+          <td>${row.database_name}</td>
+          <td>${row.date}</td>
+          <td>${row.no_of_records}</td>
+          <td>${row.leads_generated}</td>
+        </tr>`;
+      });
+    }
+
+    async function init() {
+      const dbList = await fetchDatabases();
+      const select = document.getElementById("dbFilter");
+      dbList.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d.database_name;
+        opt.textContent = d.database_name;
+        select.appendChild(opt);
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
