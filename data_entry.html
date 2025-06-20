@@ -167,9 +167,8 @@
 
           const typeMap = {}, dateMap = {};
           data.forEach(row => {
-            const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
             const type = row.campaignType;
-            const date = formattedDate;
+            const date = row.date;
             const leads = Number(row.noOfLeads || 0);
             typeMap[type] = (typeMap[type] || 0) + leads;
             dateMap[date] = (dateMap[date] || 0) + leads;
@@ -214,9 +213,8 @@
         .then(res => res.json())
         .then(data => {
           const events = data.map(row => ({
-            const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
             title: `${row.databaseName} - ${row.campaignType} (${row.noOfLeads} leads)`,
-            start: formattedDate,
+            start: row.date,
             allDay: true
           }));
           const calendarEl = document.getElementById('calendar');
