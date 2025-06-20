@@ -7,7 +7,8 @@
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f4f6f8;
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
     }
     .container {
       max-width: 1100px;
@@ -147,10 +148,9 @@
     <h2>Campaign Calendar</h2>
     <div id="calendar"></div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwzgcVyg3sH4VBZjT3vhe6MIDe3bI3d99i8JGpFxEDa_T7mTJeCXiNhgG76p8QgAb5-Lg/exec'; // Replace with your deployed Apps Script URL
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwzgcVyg3sH4VBZjT3vhe6MIDe3bI3d99i8JGpFxEDa_T7mTJeCXiNhgG76p8QgAb5-Lg/exec'; // Replace with your Apps Script Web App URL
 
     function showSpinner() {
       document.getElementById('spinner').style.display = 'block';
@@ -166,6 +166,9 @@
         .then(names => {
           const select = document.getElementById('dbDropdown');
           while (select.options.length > 1) select.remove(1);
+          if (Array.isArray(names) && Array.isArray(names[0])) {
+            names = names.map(row => row[0]);
+          }
           names.forEach(name => {
             if (name && name.toString().trim()) {
               const opt = document.createElement('option');
@@ -221,5 +224,42 @@
         </tr>`;
       data.forEach(row => {
         html += `<tr>
-          <td>${row.databaseName || ''}</td>
-          <td>${
+          <td>${row.databaseName || row.database_name || ''}</td>
+          <td>${row.campaignType || row.campaign_type}</td>
+          <td>${row.date}</td>
+          <td>${row.noOfRecords || row.no_of_records}</td>
+          <td>${row.noOfLeads || row.no_of_leads}</td>
+        </tr>`;
+      });
+      html += "</table>";
+      reportDiv.innerHTML = html;
+    }
+
+    function loadCalendar() {
+      showSpinner();
+      fetch(scriptUrl + '?action=getAllCampaigns')
+        .then(res => res.json())
+        .then(data => {
+          const events = data.map(row => ({
+            title: `${row.databaseName || row.database_name} - ${row.campaignType || row.campaign_type} (${row.noOfLeads || row.no_of_leads} leads)`,
+            start: row.date,
+            allDay: true
+          }));
+          const calendarEl = document.getElementById('calendar');
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            events: events,
+            headerToolbar: {
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,listMonth'
+            }
+          });
+          calendar.render();
+          hideSpinner();
+        })
+        .catch(() => hideSpinner());
+    }
+  </script>
+</body>
+</html>
