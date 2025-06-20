@@ -223,10 +223,11 @@
           <th>No. of Leads</th>
         </tr>`;
       data.forEach(row => {
+            const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
         html += `<tr>
           <td>${row.databaseName || row.database_name || ''}</td>
           <td>${row.campaignType || row.campaign_type}</td>
-          <td>${row.date}</td>
+          <td>${formattedDate}</td>
           <td>${row.noOfRecords || row.no_of_records}</td>
           <td>${row.noOfLeads || row.no_of_leads}</td>
         </tr>`;
