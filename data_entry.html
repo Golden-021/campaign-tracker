@@ -8,6 +8,17 @@
     input, select, textarea, button { width: 100%; margin-top: 10px; padding: 8px; font-size: 15px; }
     h2 { text-align: center; }
     .section { margin-bottom: 30px; }
+    #spinner {
+      display: none;
+      margin: 20px auto;
+      border: 6px solid #eee;
+      border-top: 6px solid #555;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -31,7 +42,7 @@
     <h2>Add Campaign Details</h2>
     <form id="campaignForm">
       <div class="section">
-        <select id="dbDropdown"></select>
+        <input type="text" name="databaseName" placeholder="Database Name" required>
         <select name="campaignType" required>
           <option value="">Select Campaign Type</option>
           <option value="whatsapp1">WhatsApp 1</option>
@@ -46,14 +57,23 @@
         <button type="button" onclick="addCampaign()">Add Campaign</button>
       </div>
     </form>
+    <div id="spinner"></div>
     <div id="msg"></div>
   </div>
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwKRcADsekD-6gYlyD5YNMDA0FwnaKGuSJhuFdyvwpiz9cjHvSrN5TAxp1J2zMD_NrvZg/exec'; // Replace with your Apps Script Web App URL
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbzHlUoTop8QFLSfEG6aNqdpFAYxTdYs56BHcxGylZRAaJRQFK9fEmH8Qxg8HiTpALh66g/exec'; // Replace with your Apps Script Web App URL
+
+    function showSpinner() {
+      document.getElementById('spinner').style.display = 'block';
+    }
+    function hideSpinner() {
+      document.getElementById('spinner').style.display = 'none';
+    }
 
     function addDatabase() {
       const form = document.getElementById('dbForm');
       const data = Object.fromEntries(new FormData(form).entries());
+      showSpinner();
       fetch(scriptUrl + '?action=addDatabase', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -63,12 +83,15 @@
       .then(res => {
         document.getElementById('msg').textContent = res.success ? "Database added!" : "Error adding database.";
         if (res.success) form.reset();
-      });
+        hideSpinner();
+      })
+      .catch(() => { hideSpinner(); });
     }
 
     function addCampaign() {
       const form = document.getElementById('campaignForm');
       const data = Object.fromEntries(new FormData(form).entries());
+      showSpinner();
       fetch(scriptUrl + '?action=addCampaign', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -78,7 +101,9 @@
       .then(res => {
         document.getElementById('msg').textContent = res.success ? "Campaign added!" : "Error adding campaign.";
         if (res.success) form.reset();
-      });
+        hideSpinner();
+      })
+      .catch(() => { hideSpinner(); });
     }
   </script>
 </body>
