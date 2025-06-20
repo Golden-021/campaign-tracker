@@ -1,67 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Campaign Tracker - Data Entry</title>
+  <title>Database & Campaign Entry</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
-    label, input, textarea, select { display: block; width: 100%; margin-bottom: 10px; }
-    button { padding: 8px 16px; }
+    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
+    .box { background: white; padding: 20px; max-width: 600px; margin: auto; border-radius: 8px; }
+    input, select, textarea, button { width: 100%; margin-top: 10px; padding: 8px; font-size: 15px; }
+    h2 { text-align: center; }
+    .section { margin-bottom: 30px; }
   </style>
 </head>
 <body>
-  <h2>Add Database Details</h2>
-  <form id="dbForm">
-    <input name="type" value="database" type="hidden" />
-    <label>Database Name</label><input name="database_name" required />
-    <label>Source</label><input name="source" />
-    <label>Industry</label><input name="industry" />
-    <label>Total Records</label><input name="total_records" type="number" />
-    <label>Total Emails</label><input name="total_emails" type="number" />
-    <label>Valid Emails</label><input name="valid_emails" type="number" />
-    <label>Total Mobile</label><input name="total_mobile" type="number" />
-    <label>Valid WhatsApp</label><input name="valid_whatsapp" type="number" />
-    <label>Description</label><textarea name="description"></textarea>
-    <button type="submit">Submit Database</button>
-  </form>
+  <div class="box">
+    <h2>Add Database Details</h2>
+    <form id="dbForm">
+      <div class="section">
+        <input type="text" name="name" placeholder="Database Name" required>
+        <input type="text" name="source" placeholder="Source" required>
+        <input type="text" name="industry" placeholder="Industry" required>
+        <input type="number" name="totalRecords" placeholder="Total No. of Records" required>
+        <input type="number" name="noOfEmails" placeholder="No. of Emails" required>
+        <input type="number" name="noOfValidEmails" placeholder="No. of Valid Emails" required>
+        <input type="number" name="noOfMobile" placeholder="No. of Mobile No." required>
+        <input type="number" name="noOfValidWhatsApp" placeholder="No. of WhatsApp Valid Mobile No." required>
+        <textarea name="description" placeholder="Description"></textarea>
+        <button type="button" onclick="addDatabase()">Add Database</button>
+      </div>
+    </form>
 
-  <h2>Add Campaign Details</h2>
-  <form id="campaignForm">
-    <input name="type" value="campaign" type="hidden" />
-    <label>Campaign Type</label>
-    <select name="campaign_type" required>
-      <option>WhatsApp1</option>
-      <option>WhatsApp2</option>
-      <option>Email1</option>
-      <option>Email2</option>
-      <option>Telecalling</option>
-    </select>
-    <label>Database Name</label><input name="database_name" required />
-    <label>Date</label><input name="date" type="date" required />
-    <label>No. of Records</label><input name="no_of_records" type="number" required />
-    <label>Leads Generated</label><input name="leads_generated" type="number" required />
-    <button type="submit">Submit Campaign</button>
-  </form>
-
+    <h2>Add Campaign Details</h2>
+    <form id="campaignForm">
+      <div class="section">
+        <input type="text" name="databaseName" placeholder="Database Name" required>
+        <select name="campaignType" required>
+          <option value="">Select Campaign Type</option>
+          <option value="whatsapp1">WhatsApp 1</option>
+          <option value="whatsapp2">WhatsApp 2</option>
+          <option value="email1">Email 1</option>
+          <option value="email2">Email 2</option>
+          <option value="telecalling">Telecalling</option>
+        </select>
+        <input type="date" name="date" required>
+        <input type="number" name="noOfRecords" placeholder="No. of Records" required>
+        <input type="number" name="noOfLeads" placeholder="No. of Leads Came" required>
+        <button type="button" onclick="addCampaign()">Add Campaign</button>
+      </div>
+    </form>
+    <div id="msg"></div>
+  </div>
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwUWHnY4SmJ3efrU7lUviQ5LoW8alvP0ZqGuP24aMFNGKQBtsFI-kR0qoRQHhyYaASbxA/exec';
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwKRcADsekD-6gYlyD5YNMDA0FwnaKGuSJhuFdyvwpiz9cjHvSrN5TAxp1J2zMD_NrvZg/exec'; // Replace with your Apps Script Web App URL
 
-    document.getElementById('dbForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const form = e.target;
-      fetch(scriptURL, {
+    function addDatabase() {
+      const form = document.getElementById('dbForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      fetch(scriptUrl + '?action=addDatabase', {
         method: 'POST',
-        body: new FormData(form)
-      }).then(res => alert("Database added!"));
-    });
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(res => {
+        document.getElementById('msg').textContent = res.success ? "Database added!" : "Error adding database.";
+        if (res.success) form.reset();
+      });
+    }
 
-    document.getElementById('campaignForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const form = e.target;
-      fetch(scriptURL, {
+    function addCampaign() {
+      const form = document.getElementById('campaignForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      fetch(scriptUrl + '?action=addCampaign', {
         method: 'POST',
-        body: new FormData(form)
-      }).then(res => alert("Campaign added!"));
-    });
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(res => {
+        document.getElementById('msg').textContent = res.success ? "Campaign added!" : "Error adding campaign.";
+        if (res.success) form.reset();
+      });
+    }
   </script>
 </body>
 </html>
