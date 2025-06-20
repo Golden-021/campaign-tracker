@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Campaign Tracker - Data Entry</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
+    label, input, textarea, select { display: block; width: 100%; margin-bottom: 10px; }
+    button { padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h2>Add Database Details</h2>
+  <form id="dbForm">
+    <input name="type" value="database" type="hidden" />
+    <label>Database Name</label><input name="database_name" required />
+    <label>Source</label><input name="source" />
+    <label>Industry</label><input name="industry" />
+    <label>Total Records</label><input name="total_records" type="number" />
+    <label>Total Emails</label><input name="total_emails" type="number" />
+    <label>Valid Emails</label><input name="valid_emails" type="number" />
+    <label>Total Mobile</label><input name="total_mobile" type="number" />
+    <label>Valid WhatsApp</label><input name="valid_whatsapp" type="number" />
+    <label>Description</label><textarea name="description"></textarea>
+    <button type="submit">Submit Database</button>
+  </form>
+
+  <h2>Add Campaign Details</h2>
+  <form id="campaignForm">
+    <input name="type" value="campaign" type="hidden" />
+    <label>Campaign Type</label>
+    <select name="campaign_type" required>
+      <option>WhatsApp1</option>
+      <option>WhatsApp2</option>
+      <option>Email1</option>
+      <option>Email2</option>
+      <option>Telecalling</option>
+    </select>
+    <label>Database Name</label><input name="database_name" required />
+    <label>Date</label><input name="date" type="date" required />
+    <label>No. of Records</label><input name="no_of_records" type="number" required />
+    <label>Leads Generated</label><input name="leads_generated" type="number" required />
+    <button type="submit">Submit Campaign</button>
+  </form>
+
+  <script>
+    const scriptURL = 'YOUR_SCRIPT_WEB_APP_URL_HERE';
+
+    document.getElementById('dbForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const form = e.target;
+      fetch(scriptURL, {
+        method: 'POST',
+        body: new FormData(form)
+      }).then(res => alert("Database added!"));
+    });
+
+    document.getElementById('campaignForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const form = e.target;
+      fetch(scriptURL, {
+        method: 'POST',
+        body: new FormData(form)
+      }).then(res => alert("Campaign added!"));
+    });
+  </script>
+</body>
+</html>
