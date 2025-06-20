@@ -153,10 +153,11 @@
           }
 
           let html = `<h3>Campaigns for ${db}</h3><table><tr><th>Type</th><th>Date</th><th>Records</th><th>Leads</th></tr>`;
+          const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
           data.forEach(row => {
             html += `<tr>
               <td>${row.campaignType}</td>
-              <td>${row.date}</td>
+              <td>${formattedDate}</td>
               <td>${row.noOfRecords}</td>
               <td>${row.noOfLeads}</td>
             </tr>`;
@@ -166,8 +167,9 @@
 
           const typeMap = {}, dateMap = {};
           data.forEach(row => {
+            const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
             const type = row.campaignType;
-            const date = row.date;
+            const date = formattedDate;
             const leads = Number(row.noOfLeads || 0);
             typeMap[type] = (typeMap[type] || 0) + leads;
             dateMap[date] = (dateMap[date] || 0) + leads;
@@ -212,8 +214,9 @@
         .then(res => res.json())
         .then(data => {
           const events = data.map(row => ({
+            const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
             title: `${row.databaseName} - ${row.campaignType} (${row.noOfLeads} leads)`,
-            start: row.date,
+            start: formattedDate,
             allDay: true
           }));
           const calendarEl = document.getElementById('calendar');
