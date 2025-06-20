@@ -44,6 +44,8 @@
       font-weight: 500;
       color: #333;
       margin-right: 8px;
+      display: block;
+      margin-bottom: 4px;
     }
     .filters select, .filters input[type="date"] {
       padding: 7px 12px;
@@ -51,7 +53,7 @@
       border: 1px solid #bdbdbd;
       font-size: 1em;
       background: #fafbfc;
-      margin-right: 10px;
+      min-width: 160px;
     }
     .filters button {
       background: #3949ab;
@@ -62,6 +64,8 @@
       font-size: 1em;
       cursor: pointer;
       transition: background 0.2s;
+      height: 38px;
+      align-self: flex-end;
     }
     .filters button:hover {
       background: #283593;
@@ -117,10 +121,22 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.03);
       padding: 10px;
     }
+    #dbDetails {
+      background: #eef2fc;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 6px;
+      font-size: 14px;
+      white-space: pre-wrap;
+      min-height: 110px;
+      box-shadow: inset 0 0 5px #cfd9f7;
+      max-width: 400px;
+    }
     @media (max-width: 700px) {
       .container { padding: 10px; }
-      .filters { flex-direction: column; gap: 12px; }
+      .filters { flex-direction: column; gap: 12px; align-items: center; }
       #calendar { padding: 0; }
+      #dbDetails { max-width: 100%; }
     }
   </style>
 </head>
@@ -134,13 +150,14 @@
         <select id="dbDropdown">
           <option value="">-- Select Database --</option>
         </select>
-        <button onclick="fetchByDatabase()">Show</button>
+        <div id="dbDetails"></div>
+        <button onclick="fetchByDatabase()">Show Campaigns</button>
       </div>
       <div>
         <label for="fromDate">Date Range:</label>
         <input type="date" id="fromDate">
         <input type="date" id="toDate">
-        <button onclick="fetchByDate()">Show</button>
+        <button onclick="fetchByDate()">Show Campaigns</button>
       </div>
     </div>
     <div id="spinner"></div>
@@ -148,9 +165,11 @@
     <h2>Campaign Calendar</h2>
     <div id="calendar"></div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwVgT5S9dLshTSu4niSMNb4MUeSj1Xraa-dIxwxaBwKXDVPqm9IMXrlEfqKQBCTds6YWA/exec'; // Replace with your Apps Script Web App URL
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwtItyuGM7jTUiG7C6FFN_JK-Ps5t-rCSiSqC0aY286mE66-EnsfpCCwALBjlBxn2Wdbw/exec
+'; // Replace with your Apps Script URL
 
     function showSpinner() {
       document.getElementById('spinner').style.display = 'block';
@@ -166,26 +185,36 @@
         .then(names => {
           const select = document.getElementById('dbDropdown');
           while (select.options.length > 1) select.remove(1);
-          if (Array.isArray(names) && Array.isArray(names[0])) {
-            names = names.map(row => row[0]);
-          }
           names.forEach(name => {
-            if (name && name.toString().trim()) {
-              const opt = document.createElement('option');
-              opt.value = name;
-              opt.textContent = name;
-              select.appendChild(opt);
-            }
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
           });
           hideSpinner();
         })
         .catch(() => hideSpinner());
     }
 
-    window.onload = function() {
-      populateDropdown();
-      loadCalendar();
-    };
+    document.getElementById('dbDropdown').addEventListener('change', function() {
+      const dbName = this.value;
+      if (!dbName) return;
+      showSpinner();
+      fetch(`${scriptUrl}?action=getDatabaseDetails&databaseName=${encodeURIComponent(dbName)}`)
+        .then(res => res.json())
+        .then(details => {
+          const box = document.getElementById('dbDetails');
+          if (!details) return box.textContent = 'No details found';
+          let html = '';
+          for (const [key, val] of Object.entries(details)) {
+            const k = key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+            html += `${k}: ${val}\n`;
+          }
+          box.textContent = html;
+          hideSpinner();
+        })
+        .catch(() => hideSpinner());
+    });
 
     function fetchByDatabase() {
       const db = document.getElementById('dbDropdown').value;
@@ -210,7 +239,7 @@
 
     function showReport(data) {
       const reportDiv = document.getElementById('report');
-      if (!data.length) {
+      if (!data || !data.length) {
         reportDiv.innerHTML = "<div class='no-data'>No data found for the selected filter.</div>";
         return;
       }
@@ -224,14 +253,14 @@
         </tr>`;
       data.forEach(row => {
         html += `<tr>
-          <td>${row.databaseName || row.database_name || ''}</td>
-          <td>${row.campaignType || row.campaign_type}</td>
-          <td>${row.date}</td>
-          <td>${row.noOfRecords || row.no_of_records}</td>
-          <td>${row.noOfLeads || row.no_of_leads}</td>
+          <td>${row.databaseName || ''}</td>
+          <td>${row.campaignType || ''}</td>
+          <td>${row.date || ''}</td>
+          <td>${row.noOfRecords || ''}</td>
+          <td>${row.noOfLeads || ''}</td>
         </tr>`;
       });
-      html += "</table>";
+      html += '</table>';
       reportDiv.innerHTML = html;
     }
 
@@ -241,14 +270,14 @@
         .then(res => res.json())
         .then(data => {
           const events = data.map(row => ({
-            title: `${row.databaseName || row.database_name} - ${row.campaignType || row.campaign_type} (${row.noOfLeads || row.no_of_leads} leads)`,
+            title: `${row.databaseName} - ${row.campaignType} (${row.noOfLeads} leads)`,
             start: row.date,
             allDay: true
           }));
           const calendarEl = document.getElementById('calendar');
           const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            events: events,
+            events,
             headerToolbar: {
               left: 'prev,next today',
               center: 'title',
@@ -260,6 +289,11 @@
         })
         .catch(() => hideSpinner());
     }
+
+    window.onload = function() {
+      populateDropdown();
+      loadCalendar();
+    };
   </script>
 </body>
 </html>
