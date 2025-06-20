@@ -7,8 +7,7 @@
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f4f6f8;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
     .container {
       max-width: 1100px;
@@ -44,8 +43,6 @@
       font-weight: 500;
       color: #333;
       margin-right: 8px;
-      display: block;
-      margin-bottom: 4px;
     }
     .filters select, .filters input[type="date"] {
       padding: 7px 12px;
@@ -53,7 +50,7 @@
       border: 1px solid #bdbdbd;
       font-size: 1em;
       background: #fafbfc;
-      min-width: 160px;
+      margin-right: 10px;
     }
     .filters button {
       background: #3949ab;
@@ -64,8 +61,6 @@
       font-size: 1em;
       cursor: pointer;
       transition: background 0.2s;
-      height: 38px;
-      align-self: flex-end;
     }
     .filters button:hover {
       background: #283593;
@@ -121,22 +116,10 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.03);
       padding: 10px;
     }
-    #dbDetails {
-      background: #eef2fc;
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 6px;
-      font-size: 14px;
-      white-space: pre-wrap;
-      min-height: 110px;
-      box-shadow: inset 0 0 5px #cfd9f7;
-      max-width: 400px;
-    }
     @media (max-width: 700px) {
       .container { padding: 10px; }
-      .filters { flex-direction: column; gap: 12px; align-items: center; }
+      .filters { flex-direction: column; gap: 12px; }
       #calendar { padding: 0; }
-      #dbDetails { max-width: 100%; }
     }
   </style>
 </head>
@@ -150,14 +133,13 @@
         <select id="dbDropdown">
           <option value="">-- Select Database --</option>
         </select>
-        <div id="dbDetails"></div>
-        <button onclick="fetchByDatabase()">Show Campaigns</button>
+        <button onclick="fetchByDatabase()">Show</button>
       </div>
       <div>
         <label for="fromDate">Date Range:</label>
         <input type="date" id="fromDate">
         <input type="date" id="toDate">
-        <button onclick="fetchByDate()">Show Campaigns</button>
+        <button onclick="fetchByDate()">Show</button>
       </div>
     </div>
     <div id="spinner"></div>
@@ -168,7 +150,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwzgcVyg3sH4VBZjT3vhe6MIDe3bI3d99i8JGpFxEDa_T7mTJeCXiNhgG76p8QgAb5-Lg/exec'; // Replace with your Apps Script Web App URL
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwzgcVyg3sH4VBZjT3vhe6MIDe3bI3d99i8JGpFxEDa_T7mTJeCXiNhgG76p8QgAb5-Lg/exec'; // Replace with your deployed Apps Script URL
 
     function showSpinner() {
       document.getElementById('spinner').style.display = 'block';
@@ -184,58 +166,23 @@
         .then(names => {
           const select = document.getElementById('dbDropdown');
           while (select.options.length > 1) select.remove(1);
-          if (Array.isArray(names) && names.length > 0) {
-            // names can be array of arrays or strings
-            if (Array.isArray(names[0])) {
-              names = names.map(row => row[0]);
+          names.forEach(name => {
+            if (name && name.toString().trim()) {
+              const opt = document.createElement('option');
+              opt.value = name;
+              opt.textContent = name;
+              select.appendChild(opt);
             }
-            names.forEach(name => {
-              if (name && name.toString().trim()) {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                select.appendChild(opt);
-              }
-            });
-          }
+          });
           hideSpinner();
         })
         .catch(() => hideSpinner());
     }
 
-    function clearDbDetails() {
-      document.getElementById('dbDetails').textContent = "";
-    }
-
-    // Show database details on selection
-    document.getElementById('dbDropdown').addEventListener('change', function() {
-      const dbName = this.value;
-      if (!dbName) {
-        clearDbDetails();
-        return;
-      }
-      showSpinner();
-      fetch(`${scriptUrl}?action=getDatabaseDetails&databaseName=${encodeURIComponent(dbName)}`)
-        .then(res => res.json())
-        .then(details => {
-          if (!details) {
-            document.getElementById('dbDetails').textContent = "No details found.";
-          } else {
-            let text = '';
-            for (const [key, value] of Object.entries(details)) {
-              // Format keys for better display
-              const prettyKey = key.replace(/([A-Z])/g, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
-              text += `${prettyKey}: ${value}\n`;
-            }
-            document.getElementById('dbDetails').textContent = text;
-          }
-          hideSpinner();
-        })
-        .catch(() => {
-          document.getElementById('dbDetails').textContent = "Error loading details.";
-          hideSpinner();
-        });
-    });
+    window.onload = function() {
+      populateDropdown();
+      loadCalendar();
+    };
 
     function fetchByDatabase() {
       const db = document.getElementById('dbDropdown').value;
@@ -260,7 +207,7 @@
 
     function showReport(data) {
       const reportDiv = document.getElementById('report');
-      if (!data || !data.length) {
+      if (!data.length) {
         reportDiv.innerHTML = "<div class='no-data'>No data found for the selected filter.</div>";
         return;
       }
@@ -274,47 +221,5 @@
         </tr>`;
       data.forEach(row => {
         html += `<tr>
-          <td>${row.databaseName || row.database_name || ''}</td>
-          <td>${row.campaignType || row.campaign_type || ''}</td>
-          <td>${row.date}</td>
-          <td>${row.noOfRecords || row.no_of_records || ''}</td>
-          <td>${row.noOfLeads || row.no_of_leads || ''}</td>
-        </tr>`;
-      });
-      html += "</table>";
-      reportDiv.innerHTML = html;
-    }
-
-    function loadCalendar() {
-      showSpinner();
-      fetch(scriptUrl + '?action=getAllCampaigns')
-        .then(res => res.json())
-        .then(data => {
-          const events = data.map(row => ({
-            title: `${row.databaseName || row.database_name} - ${row.campaignType || row.campaign_type} (${row.noOfLeads || row.no_of_leads} leads)`,
-            start: row.date,
-            allDay: true
-          }));
-          const calendarEl = document.getElementById('calendar');
-          const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            events: events,
-            headerToolbar: {
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,listMonth'
-            }
-          });
-          calendar.render();
-          hideSpinner();
-        })
-        .catch(() => hideSpinner());
-    }
-
-    window.onload = function() {
-      populateDropdown();
-      loadCalendar();
-    };
-  </script>
-</body>
-</html>
+          <td>${row.databaseName || ''}</td>
+          <td>${
