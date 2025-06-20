@@ -154,9 +154,11 @@
 
           let html = `<h3>Campaigns for ${db}</h3><table><tr><th>Type</th><th>Date</th><th>Records</th><th>Leads</th></tr>`;
           data.forEach(row => {
+       const formattedDate = new Date(row.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+
             html += `<tr>
               <td>${row.campaignType}</td>
-              <td>${row.date}</td>
+              <td>${formattedDate}</td>
               <td>${row.noOfRecords}</td>
               <td>${row.noOfLeads}</td>
             </tr>`;
